@@ -1,0 +1,16 @@
+{
+  "name": "message-broker",
+  "version": "0.0.1",
+  "description": "Message Broker for Browsers",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jeswin/message-broker.git"
+  },
+  "author": "jeswinpk@agilehead.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jeswin/message-broker/issues"
+  },
+  "homepage": "https://github.com/jeswin/message-broker"
+}
