@@ -9,11 +9,10 @@ export type EventHandlerMap = {
   };
 };
 
-type AttachHandlerFunction<TEvents extends EventHandlerMap, TMessageEvent> = <
-  K extends string,
-  P,
-  R
->(
+type AttachHandlerFunction<
+  TEvents extends EventHandlerMap,
+  TMessageEvent extends { data: Message<any> }
+> = <K extends string, P, R>(
   event: K,
   handler: EventHandler<P, R>
 ) => MessageBroker<
@@ -33,7 +32,10 @@ export interface ResponseMessage<TResponse> {
   response: TResponse; // Handler's response
 }
 
-export interface MessageBroker<TEvents extends EventHandlerMap, TMessageEvent> {
+export interface MessageBroker<
+  TEvents extends EventHandlerMap,
+  TMessageEvent extends { data: Message<any> }
+> {
   attachHandler: AttachHandlerFunction<TEvents, TMessageEvent>;
   onMessage: (event: TMessageEvent) => void;
 }

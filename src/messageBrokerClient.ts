@@ -1,4 +1,4 @@
-import { EventHandlerMap } from "./messageBroker.js";
+import { EventHandlerMap, ResponseMessage } from "./messageBroker.js";
 
 // Helper function to generate a random 16-character alphanumeric string
 function generateUniquePrefix(): string {
@@ -17,7 +17,7 @@ export interface MessageClient<TEvents extends EventHandlerMap, TMessageEvent> {
 // The function to create a message broker client
 export function createMessageBrokerClient<
   TEvents extends EventHandlerMap,
-  TMessageEvent extends { data: any }
+  TMessageEvent extends { data: ResponseMessage<any> }
 >(postMessage: Function): MessageClient<TEvents, TMessageEvent> {
   // Generate a unique prefix for this instance
   const uniquePrefix = generateUniquePrefix();
