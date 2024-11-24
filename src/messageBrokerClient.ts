@@ -1,4 +1,3 @@
-import { IDisposable } from "./IDisposable.js";
 import { EventHandlerMap } from "./messageBroker.js";
 
 // Helper function to generate a random 16-character alphanumeric string
@@ -7,18 +6,19 @@ function generateUniquePrefix(): string {
 }
 
 // Define the structure of the MessageBroker client
-export interface MessageClient<TEvents extends EventHandlerMap>
-  extends IDisposable {
+export interface MessageClient<TEvents extends EventHandlerMap, TMessageEvent> {
   send<K extends keyof TEvents>(
     event: K,
     payload: TEvents[K]["payload"]
   ): Promise<TEvents[K]["response"]>;
+  onMessage: (event: TMessageEvent) => void;
 }
 
 // The function to create a message broker client
 export function createMessageBrokerClient<
-  TEvents extends EventHandlerMap
->(): MessageClient<TEvents> {
+  TEvents extends EventHandlerMap,
+  TMessageEvent extends { data: any }
+>(postMessage: Function): MessageClient<TEvents, TMessageEvent> {
   // Generate a unique prefix for this instance
   const uniquePrefix = generateUniquePrefix();
 
@@ -30,26 +30,6 @@ export function createMessageBrokerClient<
 
   // Function to generate a sequential ID with the unique prefix
   const generateSequentialId = () => `${uniquePrefix}-${currentId++}`;
-
-  function onMessage(event: MessageEvent) {
-    const { id, response } = event.data as { id: string; response: any };
-
-    // If the message ID matches a pending request, resolve the corresponding promise
-    if (pendingRequests.has(id)) {
-      const resolve = pendingRequests.get(id);
-      if (resolve) {
-        resolve(response);
-        pendingRequests.delete(id); // Remove the resolved request from the map
-      }
-    }
-  }
-
-  // Listen for incoming messages (responses from the broker)
-  window.addEventListener("message", onMessage);
-
-  const dispose = () => {
-    window.removeEventListener("message", onMessage);
-  };
 
   // Client's `send` method to send an event to the broker and wait for a response
   const send = <K extends keyof TEvents>(
@@ -65,17 +45,27 @@ export function createMessageBrokerClient<
       pendingRequests.set(responseId, resolve);
 
       // Send the event to the broker with the unique ID and payload
-      window.postMessage(
-        {
-          id,
-          event,
-          payload,
-        },
-        "*"
-      );
+      postMessage({
+        id,
+        event,
+        payload,
+      });
     });
   };
 
+  function onMessage(event: TMessageEvent) {
+    const { id, response } = event.data as { id: string; response: any };
+
+    // If the message ID matches a pending request, resolve the corresponding promise
+    if (pendingRequests.has(id)) {
+      const resolve = pendingRequests.get(id);
+      if (resolve) {
+        resolve(response);
+        pendingRequests.delete(id); // Remove the resolved request from the map
+      }
+    }
+  }
+
   // Return the client object with the send method
-  return { dispose, send };
+  return { send, onMessage };
 }
