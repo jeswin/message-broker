@@ -34,7 +34,7 @@ export interface ResponseMessage<TResponse> {
 
 export interface MessageBroker<
   TEvents extends EventHandlerMap,
-  TMessageEvent extends { data: Message<any> }
+  TMessageEvent extends { data: Message<any> } = any
 > {
   attachHandler: AttachHandlerFunction<TEvents, TMessageEvent>;
   onMessage: (event: TMessageEvent) => void;
@@ -45,8 +45,8 @@ export function createMessageBroker<
   TMessageEvent extends { data: any },
   TResponse
 >(
-  _eventHandlers: Map<string, EventHandler<any, any>>,
-  postMessage: (message: any) => void
+  postMessage: (message: any) => void,
+  _eventHandlers?: Map<string, EventHandler<any, any>>
 ): MessageBroker<TEvents, TMessageEvent> {
   // State to store event handlers
   const eventHandlers: Map<string, EventHandler<any, any>> = _eventHandlers ??
@@ -67,7 +67,7 @@ export function createMessageBroker<
       TEvents & { [key in K]: { payload: P; response: R } },
       TMessageEvent,
       TResponse
-    >(eventHandlers, postMessage);
+    >(postMessage, eventHandlers);
   };
 
   async function onMessage(event: TMessageEvent) {
