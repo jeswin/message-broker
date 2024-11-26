@@ -1,17 +1,20 @@
 import { BrokerType, createMessageBroker } from "../messageBroker.js";
-import { createMessageBrokerClient } from "../messageBrokerClient.js";
+import { createMessageClient } from "../messageClient.js";
 
 function getBroker() {
-  return createMessageBroker().attachHandler(
-    "adder",
-    async (params: { a: number; b: number }) => params.a + params.b
-  );
+  return createMessageBroker()
+    .attachHandler(
+      "adder",
+      async (params: { a: number; b: number }) => params.a + params.b
+    )
+    .attachHandler("random", async () => 7);
 }
 
 function getBrokerClient() {
-  return createMessageBrokerClient<BrokerType<typeof getBroker>>(() => {});
+  return createMessageClient<BrokerType<typeof getBroker>>(() => {});
 }
 
 const client = getBrokerClient();
 
 const sum = await client.send("adder", { a: 10, b: 20 });
+const aRandomNumber = await client.send("random", undefined);

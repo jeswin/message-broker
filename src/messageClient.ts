@@ -5,7 +5,7 @@ function generateUniquePrefix(): string {
   return Math.random().toString(36).substring(2, 18);
 }
 
-export interface MessageBrokerClient<
+export interface MessageClient<
   TRequestMap extends {
     [key in keyof TRequestMap]: HandlerParameters<any, any>;
   }
@@ -19,7 +19,7 @@ export interface MessageBrokerClient<
   ) => void;
 }
 
-export function createMessageBrokerClient<
+export function createMessageClient<
   TRequestMap extends {
     [key in keyof TRequestMap]: HandlerParameters<any, any>;
   }
@@ -27,7 +27,7 @@ export function createMessageBrokerClient<
   sendRequest: <K extends keyof TRequestMap>(
     request: Request<TRequestMap, K>
   ) => void
-): MessageBrokerClient<TRequestMap> {
+): MessageClient<TRequestMap> {
   const uniquePrefix = generateUniquePrefix();
   const pendingRequests = new Map<string, (response: any) => void>();
   let currentId = 1;
