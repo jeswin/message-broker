@@ -41,7 +41,7 @@ export interface MessageBroker<
   }
 > {
   attachHandler: AttachHandlerFunction<TRequestMap>; // Register a new handler
-  handleRequest: <K extends keyof TRequestMap>(
+  handleRequest: <K extends keyof TRequestMap & string>(
     request: Request<TRequestMap, K>
   ) => void; // Handle incoming requests
   canHandle: (type: string) => boolean; // Check if a handler exists for a type
@@ -72,11 +72,11 @@ export function createMessageBroker<
     >(requestHandlers);
   };
 
-  async function handleRequest<K extends keyof TRequestMap>(
+  async function handleRequest<K extends keyof TRequestMap & string>(
     request: Request<TRequestMap, K>
   ) {
     const { id, type, parameters } = request;
-    const handler = requestHandlers.get(type as string);
+    const handler = requestHandlers.get(type);
 
     if (handler) {
       const handlerResult = await handler(parameters);
