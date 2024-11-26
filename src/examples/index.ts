@@ -15,4 +15,3 @@ function getBrokerClient() {
 const client = getBrokerClient();
 
 const sum = await client.send("adder", { a: 10, b: 20 });
-

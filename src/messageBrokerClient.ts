@@ -10,19 +10,21 @@ export interface MessageBrokerClient<
     [key in keyof TRequestMap]: HandlerParameters<any, any>;
   }
 > {
-  send<K extends Extract<keyof TRequestMap, string>>(
+  send<K extends keyof TRequestMap>(
     type: K,
     parameters: TRequestMap[K]["parameters"]
   ): Promise<TRequestMap[K]["result"]>;
-  onResponse: <K extends Extract<keyof TRequestMap, string>>(
+  onResponse: <K extends keyof TRequestMap>(
     response: Response<TRequestMap, K>
   ) => void;
 }
 
 export function createMessageBrokerClient<
-  TRequestMap extends Record<string, HandlerParameters<any, any>>
+  TRequestMap extends {
+    [key in keyof TRequestMap]: HandlerParameters<any, any>;
+  }
 >(
-  sendRequest: <K extends Extract<keyof TRequestMap, string>>(
+  sendRequest: <K extends keyof TRequestMap>(
     request: Request<TRequestMap, K>
   ) => void
 ): MessageBrokerClient<TRequestMap> {
@@ -32,7 +34,7 @@ export function createMessageBrokerClient<
 
   const generateSequentialId = () => `${uniquePrefix}-${currentId++}`;
 
-  const send = <K extends Extract<keyof TRequestMap, string>>(
+  const send = <K extends keyof TRequestMap>(
     type: K,
     parameters: TRequestMap[K]["parameters"]
   ): Promise<TRequestMap[K]["result"]> => {
@@ -44,7 +46,7 @@ export function createMessageBrokerClient<
     });
   };
 
-  function onResponse<K extends Extract<keyof TRequestMap, string>>(
+  function onResponse<K extends keyof TRequestMap>(
     response: Response<TRequestMap, K>
   ) {
     const { id, result } = response;

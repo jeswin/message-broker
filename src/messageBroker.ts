@@ -14,8 +14,10 @@ type AttachHandlerFunction<TRequestMap> = <K extends string, P, R>(
 
 // Represents a structured request
 export interface Request<
-  TRequestMap extends Record<string, HandlerParameters<any, any>>,
-  K extends Extract<keyof TRequestMap, string>
+  TRequestMap extends {
+    [key in keyof TRequestMap]: HandlerParameters<any, any>;
+  },
+  K extends keyof TRequestMap
 > {
   id: string; // Unique ID for the request
   type: K; // Request type identifier
@@ -24,25 +26,31 @@ export interface Request<
 
 // Represents a structured response
 export interface Response<
-  TRequestMap extends Record<string, HandlerParameters<any, any>>,
-  K extends Extract<keyof TRequestMap, string>
+  TRequestMap extends {
+    [key in keyof TRequestMap]: HandlerParameters<any, any>;
+  },
+  K extends keyof TRequestMap
 > {
   id: string; // Matches the request ID
   result: TRequestMap[K]["result"]; // Request-specific result
 }
 
 export interface MessageBroker<
-  TRequestMap extends Record<string, HandlerParameters<any, any>>
+  TRequestMap extends {
+    [key in keyof TRequestMap]: HandlerParameters<any, any>;
+  }
 > {
   attachHandler: AttachHandlerFunction<TRequestMap>; // Register a new handler
-  handleRequest: <K extends Extract<keyof TRequestMap, string>>(
+  handleRequest: <K extends keyof TRequestMap>(
     request: Request<TRequestMap, K>
   ) => void; // Handle incoming requests
   canHandle: (type: string) => boolean; // Check if a handler exists for a type
 }
 
 export function createMessageBroker<
-  TRequestMap extends Record<string, HandlerParameters<any, any>>,
+  TRequestMap extends {
+    [key in keyof TRequestMap]: HandlerParameters<any, any>;
+  },
   TResponse
 >(
   requestHandlers: Map<string, RequestHandler<any, any>> = new Map()
@@ -64,11 +72,11 @@ export function createMessageBroker<
     >(requestHandlers);
   };
 
-  async function handleRequest<K extends Extract<keyof TRequestMap, string>>(
+  async function handleRequest<K extends keyof TRequestMap>(
     request: Request<TRequestMap, K>
   ) {
     const { id, type, parameters } = request;
-    const handler = requestHandlers.get(type);
+    const handler = requestHandlers.get(type as string);
 
     if (handler) {
       const handlerResult = await handler(parameters);
