@@ -2,21 +2,19 @@ export type EventHandler<TPayload, TResponse> = (
   payload: TPayload
 ) => Promise<TResponse>;
 
-export type EventHandlerMap = {
-  [event: string]: {
-    payload: any;
-    response: any;
-  };
+export type EventParameters<P, R> = {
+  payload: P;
+  response: R;
 };
 
 type AttachHandlerFunction<
-  TEvents extends EventHandlerMap,
+  TEvents,
   TMessageEvent extends { data: Message<any> }
 > = <K extends string, P, R>(
   event: K,
   handler: EventHandler<P, R>
 ) => MessageBroker<
-  TEvents & { [key in K]: { payload: P; response: R } },
+  TEvents & { [key in K]: EventParameters<P, R> },
   TMessageEvent
 >;
 
@@ -33,7 +31,7 @@ export interface ResponseMessage<TResponse> {
 }
 
 export interface MessageBroker<
-  TEvents extends EventHandlerMap,
+  TEvents,
   TMessageEvent extends { data: Message<any> } = any
 > {
   attachHandler: AttachHandlerFunction<TEvents, TMessageEvent>;
@@ -41,7 +39,7 @@ export interface MessageBroker<
 }
 
 export function createMessageBroker<
-  TEvents extends EventHandlerMap,
+  TEvents,
   TMessageEvent extends { data: any },
   TResponse
 >(

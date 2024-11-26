@@ -1,4 +1,4 @@
-import { EventHandlerMap, ResponseMessage } from "./messageBroker.js";
+import { EventParameters, ResponseMessage } from "./messageBroker.js";
 
 // Helper function to generate a random 16-character alphanumeric string
 function generateUniquePrefix(): string {
@@ -6,7 +6,10 @@ function generateUniquePrefix(): string {
 }
 
 // Define the structure of the MessageBroker client
-export interface MessageClient<TEvents extends EventHandlerMap, TMessageEvent> {
+export interface MessageClient<
+  TEvents extends { [key in keyof TEvents]: EventParameters<any, any> },
+  TMessageEvent
+> {
   send<K extends keyof TEvents>(
     event: K,
     payload: TEvents[K]["payload"]
@@ -16,7 +19,7 @@ export interface MessageClient<TEvents extends EventHandlerMap, TMessageEvent> {
 
 // The function to create a message broker client
 export function createMessageBrokerClient<
-  TEvents extends EventHandlerMap,
+  TEvents extends { [key in keyof TEvents]: EventParameters<any, any> },
   TMessageEvent extends { data: ResponseMessage<any> }
 >(postMessage: Function): MessageClient<TEvents, TMessageEvent> {
   // Generate a unique prefix for this instance
