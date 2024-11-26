@@ -11,20 +11,22 @@ export interface MessageBrokerClient<
     [key in keyof TRequestMap]: HandlerParameters<any, any>;
   }
 > {
-  send<K extends keyof TRequestMap & string>(
+  send<K extends Extract<keyof TRequestMap, string>>(
     type: K,
     parameters: TRequestMap[K]["parameters"]
   ): Promise<TRequestMap[K]["result"]>;
-  onResponse: <K extends keyof TRequestMap & string>(response: Response<TRequestMap, K>) => void;
+  onResponse: <K extends Extract<keyof TRequestMap, string>>(
+    response: Response<TRequestMap, K>
+  ) => void;
 }
 
 // The function to create a message broker client
 export function createMessageBrokerClient<
-  TRequestMap extends {
-    [key in keyof TRequestMap]: HandlerParameters<any, any>;
-  }
+  TRequestMap extends Record<string, HandlerParameters<any, any>>
 >(
-  sendRequest: <K extends keyof TRequestMap & string>(request: Request<TRequestMap, K>) => void
+  sendRequest: <K extends Extract<keyof TRequestMap, string>>(
+    request: Request<TRequestMap, K>
+  ) => void
 ): MessageBrokerClient<TRequestMap> {
   // Generate a unique prefix for this instance
   const uniquePrefix = generateUniquePrefix();
@@ -39,7 +41,7 @@ export function createMessageBrokerClient<
   const generateSequentialId = () => `${uniquePrefix}-${currentId++}`;
 
   // Client's `send` method to send a request to the broker and wait for a response
-  const send = <K extends keyof TRequestMap & string>(
+  const send = <K extends Extract<keyof TRequestMap, string>>(
     type: K,
     parameters: TRequestMap[K]["parameters"]
   ): Promise<TRequestMap[K]["result"]> => {
@@ -60,7 +62,9 @@ export function createMessageBrokerClient<
     });
   };
 
-  function onResponse<K extends keyof TRequestMap & string>(response: Response<TRequestMap, K>) {
+  function onResponse<K extends Extract<keyof TRequestMap, string>>(
+    response: Response<TRequestMap, K>
+  ) {
     const { id, result } = response;
 
     // If the response id matches a request id, resolve the corresponding promise

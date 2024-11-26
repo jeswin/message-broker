@@ -12,24 +12,10 @@ type AttachHandlerFunction<TRequestMap> = <K extends string, P, R>(
   handler: RequestHandler<P, R>
 ) => MessageBroker<TRequestMap & { [key in K]: HandlerParameters<P, R> }>;
 
-// // Structure for the request we receive
-// export interface Request<TParameters> {
-//   id: string; // Unique ID to match requests and responses
-//   type: string; // Request type
-//   parameters: TParameters; // Parameters to be passed to the handler
-// }
-
-// export interface Response<TResult> {
-//   id: string; // Same unique ID to respond back to the correct request
-//   result: TResult; // Handler's response
-// }
-
 // Structure for the request we receive, now typed by the request map
 export interface Request<
-  TRequestMap extends {
-    [key: string]: HandlerParameters<any, any>; // Each key should have a 'parameters' and 'result' field
-  },
-  K extends keyof TRequestMap
+  TRequestMap extends Record<string, HandlerParameters<any, any>>,
+  K extends Extract<keyof TRequestMap, string>
 > {
   id: string; // Unique ID to match requests and responses
   type: K; // Request type
@@ -38,33 +24,27 @@ export interface Request<
 
 // Structure for the response sent back, typed by the result of the request
 export interface Response<
-  TRequestMap extends {
-    [key: string]: HandlerParameters<any, any>; // Each key should have a 'parameters' and 'result' field
-  },
-  K extends keyof TRequestMap
+  TRequestMap extends Record<string, HandlerParameters<any, any>>,
+  K extends Extract<keyof TRequestMap, string>
 > {
   id: string; // Same unique ID to respond back to the correct request
   result: TRequestMap[K]["result"]; // Result tied to the specific request's result
 }
 
 export interface MessageBroker<
-  TRequestMap extends {
-    [key: string]: HandlerParameters<any, any>; // Each key should have a 'parameters' and 'result' field
-  }
+  TRequestMap extends Record<string, HandlerParameters<any, any>>
 > {
   attachHandler: AttachHandlerFunction<TRequestMap>;
-  onRequest: <K extends keyof TRequestMap & string>(
+  onRequest: <K extends Extract<keyof TRequestMap, string>>(
     request: Request<TRequestMap, K>
   ) => void;
 }
 
 export function createMessageBroker<
-  TRequestMap extends {
-    [key: string]: HandlerParameters<any, any>; // Each key should have a 'parameters' and 'result' field
-  },
+  TRequestMap extends Record<string, HandlerParameters<any, any>>,
   TResponse
 >(
-  sendResponse: <K extends keyof TRequestMap & string>(
+  sendResponse: <K extends Extract<keyof TRequestMap, string>>(
     response: Response<TRequestMap, K>
   ) => void,
   requestHandlers: Map<string, RequestHandler<any, any>> = new Map()
@@ -86,7 +66,7 @@ export function createMessageBroker<
     >(sendResponse, requestHandlers);
   };
 
-  async function onRequest<K extends keyof TRequestMap & string>(
+  async function onRequest<K extends Extract<keyof TRequestMap, string>>(
     request: Request<TRequestMap, K>
   ) {
     const { id, type, parameters } = request;
