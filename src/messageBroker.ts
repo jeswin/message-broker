@@ -114,3 +114,7 @@ export function createMessageBroker<
     onRequest,
   };
 }
+
+export type BrokerType<
+  TGetBroker extends (...params: any[]) => MessageBroker<any>
+> = ReturnType<TGetBroker> extends MessageBroker<infer T> ? T : never;
