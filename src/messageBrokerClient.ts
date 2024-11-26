@@ -1,4 +1,4 @@
-import { EventParameters, ResponseMessage } from "./messageBroker.js";
+import { HandlerParameters, Request, Response } from "./messageBroker.js";
 
 // Helper function to generate a random 16-character alphanumeric string
 function generateUniquePrefix(): string {
@@ -6,22 +6,26 @@ function generateUniquePrefix(): string {
 }
 
 // Define the structure of the MessageBroker client
-export interface MessageClient<
-  TEvents extends { [key in keyof TEvents]: EventParameters<any, any> },
-  TMessageEvent
+export interface MessageBrokerClient<
+  TRequestMap extends {
+    [key in keyof TRequestMap]: HandlerParameters<any, any>;
+  }
 > {
-  send<K extends keyof TEvents>(
-    event: K,
-    payload: TEvents[K]["payload"]
-  ): Promise<TEvents[K]["response"]>;
-  onMessage: (event: TMessageEvent) => void;
+  send<K extends keyof TRequestMap & string>(
+    type: K,
+    parameters: TRequestMap[K]["parameters"]
+  ): Promise<TRequestMap[K]["result"]>;
+  onResponse: <K extends keyof TRequestMap & string>(response: Response<TRequestMap, K>) => void;
 }
 
 // The function to create a message broker client
 export function createMessageBrokerClient<
-  TEvents extends { [key in keyof TEvents]: EventParameters<any, any> },
-  TMessageEvent extends { data: ResponseMessage<any> }
->(postMessage: Function): MessageClient<TEvents, TMessageEvent> {
+  TRequestMap extends {
+    [key in keyof TRequestMap]: HandlerParameters<any, any>;
+  }
+>(
+  sendRequest: <K extends keyof TRequestMap & string>(request: Request<TRequestMap, K>) => void
+): MessageBrokerClient<TRequestMap> {
   // Generate a unique prefix for this instance
   const uniquePrefix = generateUniquePrefix();
 
@@ -34,11 +38,11 @@ export function createMessageBrokerClient<
   // Function to generate a sequential ID with the unique prefix
   const generateSequentialId = () => `${uniquePrefix}-${currentId++}`;
 
-  // Client's `send` method to send an event to the broker and wait for a response
-  const send = <K extends keyof TEvents>(
-    event: K,
-    payload: TEvents[K]["payload"]
-  ): Promise<TEvents[K]["response"]> => {
+  // Client's `send` method to send a request to the broker and wait for a response
+  const send = <K extends keyof TRequestMap & string>(
+    type: K,
+    parameters: TRequestMap[K]["parameters"]
+  ): Promise<TRequestMap[K]["result"]> => {
     const id = generateSequentialId(); // Generate a unique ID for this request
 
     const responseId = `${id}-response`;
@@ -47,28 +51,28 @@ export function createMessageBrokerClient<
       // Store the resolve function, so it can be called when the response is received
       pendingRequests.set(responseId, resolve);
 
-      // Send the event to the broker with the unique ID and payload
-      postMessage({
+      // Send the request to the broker with the unique ID and payload
+      sendRequest({
         id,
-        event,
-        payload,
+        type,
+        parameters,
       });
     });
   };
 
-  function onMessage(event: TMessageEvent) {
-    const { id, response } = event.data as { id: string; response: any };
+  function onResponse<K extends keyof TRequestMap & string>(response: Response<TRequestMap, K>) {
+    const { id, result } = response;
 
-    // If the message ID matches a pending request, resolve the corresponding promise
+    // If the response id matches a request id, resolve the corresponding promise
     if (pendingRequests.has(id)) {
       const resolve = pendingRequests.get(id);
       if (resolve) {
-        resolve(response);
+        resolve(result);
         pendingRequests.delete(id); // Remove the resolved request from the map
       }
     }
   }
 
   // Return the client object with the send method
-  return { send, onMessage };
+  return { send, onResponse };
 }
