@@ -16,5 +16,6 @@ function getBrokerClient() {
 
 const client = getBrokerClient();
 
-const sum = await client.send("adder", { a: 10, b: 20 });
+const nothing = client.send("adder", { a: 10, b: 20 });
+const sum = await client.wait("adder", { a: 10, b: 20 });
 const aRandomNumber = await client.send("random", undefined);
